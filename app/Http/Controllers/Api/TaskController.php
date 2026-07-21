@@ -20,7 +20,20 @@ class TaskController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+        ]);
+
+        $task = auth()->user()->tasks()->create([
+            'title' => $request->title,
+            'description' => $request->description,
+        ]);
+
+        return response()->json([
+            'message' => 'Task created successfully',
+            'task' => $task,
+        ], 201);
     }
 
     /**
