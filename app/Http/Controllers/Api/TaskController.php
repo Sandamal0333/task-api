@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Task;
 
 class TaskController extends Controller
 {
@@ -43,9 +44,17 @@ class TaskController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Task $task)
     {
-        //
+        if ($task->user_id !== auth()->id()) {
+            return response()->json([
+                'message' => 'Task not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'task' => $task
+        ]);
     }
 
     /**
