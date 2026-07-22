@@ -12,7 +12,11 @@ class TaskController extends Controller
      */
     public function index()
     {
-        //
+        $tasks = auth()->user()->tasks()->latest()->get();
+
+        return response()->json([
+            'tasks' => $tasks
+        ]);
     }
 
     /**
