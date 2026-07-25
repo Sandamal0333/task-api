@@ -60,9 +60,33 @@ class TaskController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Task $task)
     {
-        //
+        // Check ownership
+        if ($task->user_id !== auth()->id()) {
+            return response()->json([
+                'message' => 'Task not found'
+            ], 404);
+        }
+
+        // Validate request
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'status' => 'required|in:Pending,In Progress,Completed',
+        ]);
+
+        // Update task
+        $task->update([
+            'title' => $request->title,
+            'description' => $request->description,
+            'status' => $request->status,
+        ]);
+
+        return response()->json([
+            'message' => 'Task updated successfully',
+            'task' => $task,
+        ]);
     }
 
     /**
