@@ -92,8 +92,20 @@ class TaskController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Task $task)
     {
-        //
+        // Check ownership
+        if ($task->user_id !== auth()->id()) {
+            return response()->json([
+                'message' => 'Task not found'
+            ], 404);
+        }
+
+        // Delete task
+        $task->delete();
+
+        return response()->json([
+            'message' => 'Task deleted successfully'
+        ]);
     }
 }
