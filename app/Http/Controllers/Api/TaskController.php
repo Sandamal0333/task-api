@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Task;
+use App\Http\Requests\StoreTaskRequest;
+use App\Http\Requests\UpdateTaskRequest;
 
 class TaskController extends Controller
 {
@@ -23,13 +25,8 @@ class TaskController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreTaskRequest $request)
     {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-        ]);
-
         $task = auth()->user()->tasks()->create([
             'title' => $request->title,
             'description' => $request->description,
@@ -60,7 +57,7 @@ class TaskController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Task $task)
+    public function update(UpdateTaskRequest $request, Task $task)
     {
         // Check ownership
         if ($task->user_id !== auth()->id()) {
@@ -68,13 +65,6 @@ class TaskController extends Controller
                 'message' => 'Task not found'
             ], 404);
         }
-
-        // Validate request
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'status' => 'required|in:Pending,In Progress,Completed',
-        ]);
 
         // Update task
         $task->update([
