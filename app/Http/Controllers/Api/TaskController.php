@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Task;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
+use App\Http\Resources\TaskResource;
 
 class TaskController extends Controller
 {
@@ -17,9 +18,7 @@ class TaskController extends Controller
     {
         $tasks = auth()->user()->tasks()->latest()->get();
 
-        return response()->json([
-            'tasks' => $tasks
-        ]);
+        return TaskResource::collection($tasks);
     }
 
     /**
@@ -34,7 +33,7 @@ class TaskController extends Controller
 
         return response()->json([
             'message' => 'Task created successfully',
-            'task' => $task,
+            'task' => new TaskResource($task),
         ], 201);
     }
 
@@ -49,9 +48,7 @@ class TaskController extends Controller
             ], 404);
         }
 
-        return response()->json([
-            'task' => $task
-        ]);
+        return new TaskResource($task);
     }
 
     /**
@@ -75,7 +72,7 @@ class TaskController extends Controller
 
         return response()->json([
             'message' => 'Task updated successfully',
-            'task' => $task,
+            'task' => new TaskResource($task),
         ]);
     }
 
