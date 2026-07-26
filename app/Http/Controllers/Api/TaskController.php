@@ -42,11 +42,7 @@ class TaskController extends Controller
      */
     public function show(Task $task)
     {
-        if ($task->user_id !== auth()->id()) {
-            return response()->json([
-                'message' => 'Task not found'
-            ], 404);
-        }
+        $this->authorize('view', $task);
 
         return new TaskResource($task);
     }
@@ -56,12 +52,7 @@ class TaskController extends Controller
      */
     public function update(UpdateTaskRequest $request, Task $task)
     {
-        // Check ownership
-        if ($task->user_id !== auth()->id()) {
-            return response()->json([
-                'message' => 'Task not found'
-            ], 404);
-        }
+       $this->authorize('update', $task);
 
         // Update task
         $task->update([
@@ -81,12 +72,7 @@ class TaskController extends Controller
      */
     public function destroy(Task $task)
     {
-        // Check ownership
-        if ($task->user_id !== auth()->id()) {
-            return response()->json([
-                'message' => 'Task not found'
-            ], 404);
-        }
+        $this->authorize('delete', $task);
 
         // Delete task
         $task->delete();
