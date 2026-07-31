@@ -16,7 +16,10 @@ class TaskController extends Controller
      */
     public function index()
     {
-        $tasks = auth()->user()->tasks()->latest()->get();
+        $tasks = auth()->user()
+            ->tasks()
+            ->latest()
+            ->paginate(10);
 
         return TaskResource::collection($tasks);
     }
@@ -52,7 +55,7 @@ class TaskController extends Controller
      */
     public function update(UpdateTaskRequest $request, Task $task)
     {
-       $this->authorize('update', $task);
+        $this->authorize('update', $task);
 
         // Update task
         $task->update([
