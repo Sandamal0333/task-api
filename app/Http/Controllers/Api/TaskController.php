@@ -28,7 +28,12 @@ class TaskController extends Controller
             });
         }
 
-        $tasks = $query->paginate(10);
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $tasks = $query->paginate(8);
 
         return TaskResource::collection($tasks);
     }
