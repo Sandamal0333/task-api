@@ -14,12 +14,21 @@ class TaskController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $tasks = auth()->user()
-            ->tasks()
-            ->latest()
-            ->paginate(10);
+        $query = auth()->user()->tasks()->latest();
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        $tasks = $query->paginate(10);
 
         return TaskResource::collection($tasks);
     }
@@ -32,6 +41,7 @@ class TaskController extends Controller
         $task = auth()->user()->tasks()->create([
             'title' => $request->title,
             'description' => $request->description,
+            'status' => $request->status,
         ]);
 
         return response()->json([
