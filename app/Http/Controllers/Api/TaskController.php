@@ -16,7 +16,7 @@ class TaskController extends Controller
      */
     public function index(Request $request)
     {
-        $query = auth()->user()->tasks()->latest();
+        $query = auth()->user()->tasks();
 
         // Search
         if ($request->filled('search')) {
@@ -32,6 +32,21 @@ class TaskController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
+
+        // Sorting
+        $allowedSorts = ['title', 'status', 'created_at', 'updated_at'];
+        $sort = $request->get('sort', 'created_at');
+        $direction = $request->get('direction', 'desc');
+
+        if (!in_array($sort, $allowedSorts)) {
+            $sort = 'created_at';
+        }
+
+        if (!in_array(strtolower($direction), ['asc', 'desc'])) {
+            $direction = 'desc';
+        }
+
+        $query->orderBy($sort, $direction);
 
         $tasks = $query->paginate(8);
 
