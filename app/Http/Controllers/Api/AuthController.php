@@ -6,9 +6,44 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use OpenApi\Attributes as OA;
 
 class AuthController extends Controller
 {
+    #[OA\Post(
+        path: "/api/register",
+        summary: "Register a new user",
+        tags: ["Authentication"],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["name", "email", "password"],
+                properties: [
+                    new OA\Property(
+                        property: "name",
+                        type: "string",
+                        example: "John Doe"
+                    ),
+                    new OA\Property(
+                        property: "email",
+                        type: "string",
+                        example: "john@example.com"
+                    ),
+                    new OA\Property(
+                        property: "password",
+                        type: "string",
+                        example: "password123"
+                    ),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: "User registered successfully"
+            )
+        ]
+    )]
     public function register(Request $request)
     {
         $request->validate([
@@ -29,6 +64,39 @@ class AuthController extends Controller
         ], 201);
     }
 
+    #[OA\Post(
+        path: "/api/login",
+        summary: "Login user",
+        tags: ["Authentication"],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["email", "password"],
+                properties: [
+                    new OA\Property(
+                        property: "email",
+                        type: "string",
+                        example: "john@example.com"
+                    ),
+                    new OA\Property(
+                        property: "password",
+                        type: "string",
+                        example: "password123"
+                    ),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Login successful"
+            ),
+            new OA\Response(
+                response: 401,
+                description: "Invalid credentials"
+            )
+        ]
+    )]
     public function login(Request $request)
     {
         // Validate request
@@ -57,6 +125,22 @@ class AuthController extends Controller
         ]);
     }
 
+    #[OA\Post(
+        path: "/api/logout",
+        summary: "Logout the authenticated user",
+        tags: ["Authentication"],
+        security: [["bearerAuth" => []]],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Logout successful"
+            ),
+            new OA\Response(
+                response: 401,
+                description: "Unauthenticated"
+            )
+        ]
+    )]
     public function logout(Request $request)
     {
         // Delete current access token
