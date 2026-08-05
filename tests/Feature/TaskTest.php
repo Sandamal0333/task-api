@@ -114,4 +114,76 @@ class TaskTest extends TestCase
             'id' => $task->id,
         ]);
     }
+
+    public function test_user_cannot_view_other_users_task()
+    {
+        $userOne = User::factory()->create();
+        $userTwo = User::factory()->create();
+
+        $token = $userTwo->createToken('test-token')->plainTextToken;
+
+        $task = $userOne->tasks()->create([
+            'title' => 'Private Task',
+            'description' => 'User one task',
+            'status' => 'Pending',
+        ]);
+
+        $response = $this->withHeader(
+            'Authorization',
+            'Bearer ' . $token
+        )->getJson('/api/tasks/' . $task->id);
+
+        $response->assertStatus(403);
+    }
+
+    public function test_user_cannot_update_other_users_task()
+    {
+        $userOne = User::factory()->create();
+        $userTwo = User::factory()->create();
+
+        $token = $userTwo->createToken('test-token')->plainTextToken;
+
+        $task = $userOne->tasks()->create([
+            'title' => 'Original Task',
+            'description' => 'User one task',
+            'status' => 'Pending',
+        ]);
+
+        $response = $this->withHeader(
+            'Authorization',
+            'Bearer ' . $token
+        )->putJson('/api/tasks/' . $task->id, [
+            'title' => 'Hacked Task',
+            'description' => 'Changed by another user',
+            'status' => 'Completed',
+        ]);
+
+        $response->assertStatus(403);
+    }
+
+    public function test_user_cannot_delete_other_users_task()
+    {
+        $userOne = User::factory()->create();
+        $userTwo = User::factory()->create();
+
+        $token = $userTwo->createToken('test-token')->plainTextToken;
+
+        $task = $userOne->tasks()->create([
+            'title' => 'Private Task',
+            'description' => 'User one task',
+            'status' => 'Pending',
+        ]);
+
+        $response = $this->withHeader(
+            'Authorization',
+            'Bearer ' . $token
+        )->deleteJson('/api/tasks/' . $task->id);
+
+        $response->assertStatus(403);
+
+        $this->assertDatabaseHas('tasks', [
+            'id' => $task->id,
+            'title' => 'Private Task',
+        ]);
+    }
 }
