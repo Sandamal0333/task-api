@@ -186,4 +186,47 @@ class TaskTest extends TestCase
             'title' => 'Private Task',
         ]);
     }
+
+    public function test_user_cannot_create_task_without_title()
+    {
+        $user = User::factory()->create();
+
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        $response = $this->withHeader(
+            'Authorization',
+            'Bearer ' . $token
+        )->postJson('/api/tasks', [
+            'description' => 'Task without title',
+            'status' => 'Pending',
+        ]);
+
+        $response->assertStatus(422);
+
+        $response->assertJsonValidationErrors([
+            'title'
+        ]);
+    }
+
+    public function test_user_cannot_create_task_with_invalid_status()
+    {
+        $user = User::factory()->create();
+
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        $response = $this->withHeader(
+            'Authorization',
+            'Bearer ' . $token
+        )->postJson('/api/tasks', [
+            'title' => 'Learn Laravel',
+            'description' => 'Testing invalid status',
+            'status' => 'wrong_status',
+        ]);
+
+        $response->assertStatus(422);
+
+        $response->assertJsonValidationErrors([
+            'status'
+        ]);
+    }
 }
