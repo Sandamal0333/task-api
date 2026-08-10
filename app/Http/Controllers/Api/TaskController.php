@@ -9,9 +9,14 @@ use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Http\Resources\TaskResource;
 use OpenApi\Attributes as OA;
+use App\Services\TaskService;
 
 class TaskController extends Controller
 {
+    public function __construct(
+        private TaskService $taskService
+    ) {}
+
     #[OA\Get(
         path: "/api/tasks",
         summary: "Get all tasks",
@@ -76,39 +81,10 @@ class TaskController extends Controller
      */
     public function index(Request $request)
     {
-        $query = auth()->user()->tasks();
-
-        // Search
-        if ($request->filled('search')) {
-            $search = $request->search;
-
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-
-        // Filter by status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Sorting
-        $allowedSorts = ['title', 'status', 'created_at', 'updated_at'];
-        $sort = $request->get('sort', 'created_at');
-        $direction = $request->get('direction', 'desc');
-
-        if (!in_array($sort, $allowedSorts)) {
-            $sort = 'created_at';
-        }
-
-        if (!in_array(strtolower($direction), ['asc', 'desc'])) {
-            $direction = 'desc';
-        }
-
-        $query->orderBy($sort, $direction);
-
-        $tasks = $query->paginate(8);
+        $tasks = $this->taskService->getUserTasks(
+            auth()->user(),
+            $request
+        );
 
         return TaskResource::collection($tasks);
     }
@@ -152,11 +128,10 @@ class TaskController extends Controller
      */
     public function store(StoreTaskRequest $request)
     {
-        $task = auth()->user()->tasks()->create([
-            'title' => $request->title,
-            'description' => $request->description,
-            'status' => $request->status,
-        ]);
+        $task = $this->taskService->createTask(
+            auth()->user(),
+            $request->validated()
+        );
 
         return response()->json([
             'message' => 'Task created successfully',
@@ -243,11 +218,10 @@ class TaskController extends Controller
         $this->authorize('update', $task);
 
         // Update task
-        $task->update([
-            'title' => $request->title,
-            'description' => $request->description,
-            'status' => $request->status,
-        ]);
+        $this->taskService->updateTask(
+            $task,
+            $request->validated()
+        );
 
         return response()->json([
             'message' => 'Task updated successfully',
@@ -255,7 +229,7 @@ class TaskController extends Controller
         ]);
     }
 
-    
+
     #[OA\Delete(
         path: "/api/tasks/{task}",
         summary: "Delete a task",
@@ -282,7 +256,7 @@ class TaskController extends Controller
         $this->authorize('delete', $task);
 
         // Delete task
-        $task->delete();
+        $this->taskService->deleteTask($task);
 
         return response()->json([
             'message' => 'Task deleted successfully'
