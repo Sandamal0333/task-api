@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Laravel\Sanctum\Sanctum;
+use App\Models\Task;
 
 class TaskTest extends TestCase
 {
@@ -314,5 +315,67 @@ class TaskTest extends TestCase
         $response = $this->getJson('/api/tasks');
 
         $response->assertStatus(429);
+        $response->assertJson([
+            'message' => 'Too Many Attempts.',
+        ]);
+    }
+
+    public function test_user_cannot_view_nonexistent_task(): void
+    {
+        $user = User::factory()->create();
+
+        Sanctum::actingAs($user);
+
+        $response = $this->getJson('/api/tasks/99999');
+
+        $response->assertStatus(404);
+        $response->assertJson([
+            'message' => 'Resource not found',
+        ]);
+    }
+
+    public function test_api_returns_json_for_unknown_route(): void
+    {
+        $response = $this->getJson('/api/does-not-exist');
+
+        $response->assertStatus(404);
+
+        $response->assertJson([
+            'message' => 'Resource not found',
+        ]);
+    }
+
+    public function test_unauthenticated_user_cannot_access_tasks(): void
+    {
+        $response = $this->getJson('/api/tasks');
+
+        $response->assertStatus(401);
+
+        $response->assertJson([
+            'message' => 'Unauthenticated.',
+        ]);
+    }
+
+    public function test_unauthorized_user_receives_json_response(): void
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+
+        $task = Task::create([
+            'title' => 'Other user task',
+            'description' => 'Test unauthorized access',
+            'status' => 'Pending',
+            'user_id' => $otherUser->id,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->getJson('/api/tasks/' . $task->id);
+
+        $response->assertStatus(403);
+
+        $response->assertJson([
+            'message' => 'This action is unauthorized.',
+        ]);
     }
 }
