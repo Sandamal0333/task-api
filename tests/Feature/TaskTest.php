@@ -300,4 +300,19 @@ class TaskTest extends TestCase
             'id' => $task->id,
         ]);
     }
+
+    public function test_user_is_rate_limited_after_too_many_requests(): void
+    {
+        $user = User::factory()->create();
+
+        Sanctum::actingAs($user);
+
+        for ($i = 0; $i < 60; $i++) {
+            $this->getJson('/api/tasks');
+        }
+
+        $response = $this->getJson('/api/tasks');
+
+        $response->assertStatus(429);
+    }
 }
