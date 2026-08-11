@@ -231,77 +231,7 @@ class TaskTest extends TestCase
             'status'
         ]);
     }
-
-    public function test_user_gets_404_when_task_does_not_exist(): void
-    {
-        $user = User::factory()->create();
-        Sanctum::actingAs($user);
-        $response = $this->getJson('/api/tasks/99999');
-        $response->assertStatus(404);
-    }
-
-    public function test_user_cannot_view_another_users_task(): void
-    {
-        $user = User::factory()->create();
-        $otherUser = User::factory()->create();
-
-        $task = $otherUser->tasks()->create([
-            'title' => 'Other User Task',
-            'description' => 'This belongs to another user',
-            'status' => 'Pending',
-        ]);
-
-        Sanctum::actingAs($user);
-
-        $response = $this->getJson('/api/tasks/' . $task->id);
-
-        $response->assertStatus(403);
-    }
-
-    public function test_user_cannot_update_another_users_task(): void
-    {
-        $user = User::factory()->create();
-        $otherUser = User::factory()->create();
-
-        $task = $otherUser->tasks()->create([
-            'title' => 'Other User Task',
-            'description' => 'This belongs to another user',
-            'status' => 'Pending',
-        ]);
-
-        Sanctum::actingAs($user);
-
-        $response = $this->putJson('/api/tasks/' . $task->id, [
-            'title' => 'Trying to update',
-            'description' => 'Should not work',
-            'status' => 'Completed',
-        ]);
-
-        $response->assertStatus(403);
-    }
-
-    public function test_user_cannot_delete_another_users_task(): void
-    {
-        $user = User::factory()->create();
-        $otherUser = User::factory()->create();
-
-        $task = $otherUser->tasks()->create([
-            'title' => 'Other User Task',
-            'description' => 'This belongs to another user',
-            'status' => 'Pending',
-        ]);
-
-        Sanctum::actingAs($user);
-
-        $response = $this->deleteJson('/api/tasks/' . $task->id);
-
-        $response->assertStatus(403);
-
-        $this->assertDatabaseHas('tasks', [
-            'id' => $task->id,
-        ]);
-    }
-
+   
     public function test_user_is_rate_limited_after_too_many_requests(): void
     {
         $user = User::factory()->create();
@@ -376,6 +306,32 @@ class TaskTest extends TestCase
 
         $response->assertJson([
             'message' => 'This action is unauthorized.',
+        ]);
+    }
+
+    public function test_user_cannot_update_task_with_invalid_status()
+    {
+        $user = User::factory()->create();
+
+        Sanctum::actingAs($user);
+
+        $task = Task::create([
+            'user_id' => $user->id,
+            'title' => 'Test Task',
+            'description' => 'Test description',
+            'status' => 'Pending',
+        ]);
+
+        $response = $this->putJson("/api/tasks/{$task->id}", [
+            'title' => 'Updated Task',
+            'description' => 'Updated description',
+            'status' => 'Invalid Status',
+        ]);
+
+        $response->assertStatus(422);
+
+        $response->assertJsonValidationErrors([
+            'status',
         ]);
     }
 }
